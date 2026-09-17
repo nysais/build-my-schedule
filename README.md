@@ -244,7 +244,7 @@ DTSTART;TZID=America/New_York:20261023T103000
 DTEND;TZID=America/New_York:20261023T113000
 SUMMARY:Advising the reluctant reader in grades 5-8
 LOCATION:Room 214
-DESCRIPTION:Deirdre Cavanaugh
+DESCRIPTION:[Presenter name]
 END:VEVENT
 ...
 END:VCALENDAR
