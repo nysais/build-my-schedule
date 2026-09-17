@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="How the personal-schedule feature on pl.nysais.org works, from the attendee's side and behind the scenes.">
+<title>Build My Schedule — NYSAIS Professional Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Lato:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --ivory: #F5F1E8;
+    --sand: #E8DFC9;
+    --slate: #DBE3EE;
+    --navy: #2B54A3;
+    --navy-deep: #1E3E7F;
+    --ink: #0E1A38;
+    --ink-soft: #3C4A6B;
+    --ink-muted: #6C7690;
+    --paper: #FFFFFF;
+    --rule: #C9BFA6;
+    --success: #2F7A4D;
+    --waitlist: #B26A1F;
+    --shadow: 0 1px 2px rgba(14,26,56,0.04), 0 8px 24px rgba(14,26,56,0.06);
+
+    --serif: "Fraunces", "Georgia", "Times New Roman", serif;
+    --sans: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ivory: #10162A;
+      --sand: #1B2544;
+      --slate: #1F2A4D;
+      --navy: #89A6E4;
+      --navy-deep: #B6CBF0;
+      --ink: #E9EEFA;
+      --ink-soft: #B6BFD6;
+      --ink-muted: #8390AE;
+      --paper: #161E37;
+      --rule: #2A345A;
+      --success: #6ED198;
+      --waitlist: #E9A85D;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ivory: #10162A;
+    --sand: #1B2544;
+    --slate: #1F2A4D;
+    --navy: #89A6E4;
+    --navy-deep: #B6CBF0;
+    --ink: #E9EEFA;
+    --ink-soft: #B6BFD6;
+    --ink-muted: #8390AE;
+    --paper: #161E37;
+    --rule: #2A345A;
+    --success: #6ED198;
+    --waitlist: #E9A85D;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  img { max-width: 100%; }
+
+  body {
+    background: var(--ivory);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-inline: 28px;
+    padding-block: 56px 96px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--navy);
+    margin: 0 0 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    display: inline-block;
+    width: 18px;
+    height: 1px;
+    background: var(--navy);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 6.4vw, 62px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 20px;
+    color: var(--ink);
+    font-variation-settings: "opsz" 96, "SOFT" 40;
+  }
+  h1 em {
+    font-style: italic;
+    color: var(--navy);
+    font-variation-settings: "opsz" 96, "SOFT" 100;
+  }
+
+  .lede {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+    margin: 0 0 8px;
+  }
+
+  .byline {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin: 32px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .byline a { color: var(--navy); text-decoration: none; }
+  .byline a:hover { text-decoration: underline; }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 64px 0 20px;
+    color: var(--ink);
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  p { margin: 0 0 18px; }
+  p a { color: var(--navy); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  .mockup {
+    margin: 40px -8px 8px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  .mockup-chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--sand);
+    border-bottom: 1px solid var(--rule);
+  }
+  .mockup-chrome span {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--rule);
+    display: inline-block;
+  }
+  .mockup-chrome .url {
+    margin-left: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.02em;
+  }
+  .mockup-inner { padding: 22px 22px 84px; }
+  .mockup-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0 0 4px;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+  .mockup-welcome {
+    background: rgba(43,84,163,0.08);
+    border: 1px solid rgba(43,84,163,0.18);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--navy-deep);
+    margin: 14px 0 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .mockup-welcome b { font-weight: 700; }
+  .mockup-daytabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--rule);
+    margin: 0 0 16px;
+  }
+  .mockup-daytabs button {
+    all: unset;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    border-bottom: 2px solid transparent;
+    cursor: default;
+  }
+  .mockup-daytabs button.active {
+    color: var(--navy);
+    border-bottom-color: var(--navy);
+    font-weight: 700;
+  }
+  .mockup-block-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    margin: 12px 0 8px;
+  }
+  .session {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background: var(--paper);
+    align-items: start;
+  }
+  .session.selected {
+    border-color: var(--navy);
+    background: rgba(43,84,163,0.04);
+  }
+  .session.waitlist { border-color: var(--waitlist); background: rgba(178,106,31,0.05); }
+  .session.locked { border-color: var(--rule); background: var(--sand); }
+  .check {
+    width: 18px; height: 18px; border-radius: 3px;
+    border: 1.5px solid var(--ink-muted);
+    display: grid; place-items: center;
+    margin-top: 2px;
+    color: var(--paper);
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .session.selected .check { background: var(--navy); border-color: var(--navy); }
+  .session.waitlist .check { background: transparent; border-color: var(--waitlist); color: var(--waitlist); font-size: 10px; }
+  .session.locked .check { background: var(--ink-muted); border-color: var(--ink-muted); }
+  .session-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+  .session-meta {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+  .session-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .session.selected .session-badge { background: var(--navy); color: var(--paper); }
+  .session.waitlist .session-badge { background: rgba(178,106,31,0.18); color: var(--waitlist); }
+  .session.locked .session-badge { background: rgba(14,26,56,0.12); color: var(--ink-soft); }
+
+  .stickybar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .stickybar-count {
+    font-family: var(--sans);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+  .stickybar-count b { color: var(--paper); font-weight: 700; font-size: 15px; }
+  .stickybar-actions { display: flex; gap: 8px; }
+  .stickybar-btn {
+    padding: 7px 14px;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--paper);
+    background: transparent;
+  }
+  .stickybar-btn.primary {
+    background: var(--paper);
+    color: var(--ink);
+    border-color: var(--paper);
+  }
+
+  .caption {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    text-align: center;
+    margin: 12px 0 0;
+  }
+
+  .flow {
+    display: grid;
+    gap: 24px;
+    margin: 28px 0 0;
+    counter-reset: step;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 18px;
+    align-items: baseline;
+  }
+  .step-num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 46px;
+    line-height: 1;
+    color: var(--navy);
+    counter-increment: step;
+  }
+  .step-num::before { content: counter(step, decimal-leading-zero); }
+  .step-body h3 { margin-bottom: 4px; font-size: 16px; }
+  .step-body p { font-size: 15px; color: var(--ink-soft); margin: 0; }
+
+  .value {
+    margin: 32px 0 8px;
+    padding: 28px 28px 24px;
+    background: var(--slate);
+    border-radius: 6px;
+  }
+  .value h2 { margin-top: 0; font-size: 24px; }
+  .value ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 24px;
+  }
+  .value li {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+    padding-left: 16px;
+    position: relative;
+  }
+  .value li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px;
+    width: 6px; height: 6px;
+    background: var(--navy);
+    border-radius: 50%;
+  }
+  .value li b {
+    display: block;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 2px;
+    font-size: 15px;
+  }
+  @media (max-width: 560px) {
+    .value ul { grid-template-columns: 1fr; }
+    .mockup { margin-inline: -16px; }
+    .step { grid-template-columns: 44px 1fr; gap: 12px; }
+    .step-num { font-size: 36px; }
+    .wrap { padding-block: 40px 64px; }
+  }
+
+  .tech {
+    margin: 56px 0 0;
+    padding: 24px 24px 20px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper);
+  }
+  .tech-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .tech-head h2 { margin: 0; font-size: 20px; font-family: var(--sans); font-weight: 700; letter-spacing: -0.005em; }
+  .tech-head .for {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .tech p, .tech li { font-size: 14px; color: var(--ink-soft); }
+  .tech ul { padding-left: 18px; margin: 8px 0 12px; }
+  .tech code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--sand);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .tech a {
+    color: var(--navy);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  hr.rule {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 48px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">NYSAIS Professional Learning · pl.nysais.org</p>
+  <h1>Every attendee, arriving with <em>their own</em> conference schedule.</h1>
+  <p class="lede">When you publish sessions for a NYSAIS conference, each registered attendee gets a private page that lets them pick what they'll actually go to, holds their seats, warns them about conflicts, and drops the day into their work calendar.</p>
+
+  <div class="mockup" aria-hidden="true">
+    <div class="mockup-chrome">
+      <span></span><span></span><span></span>
+      <span class="url">pl.nysais.org/schedule/fall-conference-2026</span>
+    </div>
+    <div class="mockup-inner">
+      <p class="mockup-title">Fall Conference 2026 — Schedule</p>
+      <div class="mockup-welcome">
+        <span>Welcome, <b>Maria</b>! Select sessions to build your personal schedule.</span>
+        <span style="color:var(--ink-muted); font-size:12px;">Sign out</span>
+      </div>
+      <div class="mockup-daytabs">
+        <button>Thu · Oct 22</button>
+        <button class="active">Fri · Oct 23</button>
+        <button>Sat · Oct 24</button>
+      </div>
+      <p class="mockup-block-label">10:30 · Concurrent block B</p>
+      <div class="session selected">
+        <span class="check">✓</span>
+        <div>
+          <div class="session-title">Advising the reluctant reader in grades 5–8</div>
+          <div class="session-meta">Deirdre Cavanaugh · Room 214 · 32 of 45 seats</div>
+        </div>
+        <span class="session-badge">On your list</span>
+      </div>
+      <div class="session waitlist">
+        <span class="check">3</span>
+        <div>
+          <div class="session-title">AI-adjacent honor codes: what schools are drafting now</div>
+          <div class="session-meta">Panel · Auditorium · Full — waitlist open</div>
+        </div>
+        <span class="session-badge">You're #3</span>
+      </div>
+      <div class="session locked">
+        <span class="check">✓</span>
+        <div>
+          <div class="session-title">Roundtable: DEI hiring in a smaller applicant pool</div>
+          <div class="session-meta">You're facilitating this session · Room 118</div>
+        </div>
+        <span class="session-badge">Speaking</span>
+      </div>
+    </div>
+    <div class="stickybar">
+      <span class="stickybar-count"><b>7</b> sessions on your schedule</span>
+      <div class="stickybar-actions">
+        <button class="stickybar-btn">Download PDF</button>
+        <button class="stickybar-btn primary">Add to calendar</button>
+      </div>
+    </div>
+  </div>
+  <p class="caption">The attendee's view — three sessions in one block, only one selectable</p>
+
+  <h2>What the attendee experiences</h2>
+  <p>The flow is deliberately short. Anything longer and busy people don't finish it.</p>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-num" aria-hidden="true"></div>
+      <div class="step-body">
+        <h3>An email arrives with a one-tap sign-in link</h3>
+        <p>No account, no password. The invite goes to the email they registered with; the link opens their private schedule page for this one event. The link keeps working for a month, from any device, so it survives a phone-to-laptop switch and inbox link-scanners.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" aria-hidden="true"></div>
+      <div class="step-body">
+        <h3>They browse the schedule day by day and tap the sessions they want</h3>
+        <p>Filters by track, format, and speaker help them narrow it down. If a session is full, they can join a waitlist and see their position. If two picks overlap, they get a gentle warning and choose. Sessions they're presenting are already checked and can't be removed.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" aria-hidden="true"></div>
+      <div class="step-body">
+        <h3>Meal-block choices pair automatically</h3>
+        <p>Conferences with a split-meal rotation (some attendees eat while others attend a session, and swap) are handled for the attendee. Picking a workshop in one slot auto-adds the meal in the paired slot. Nobody has to know it's a rotation.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" aria-hidden="true"></div>
+      <div class="step-body">
+        <h3>They export it to their real calendar and to a printable page</h3>
+        <p>An "Add to calendar" button hands them an <code style="font-family:var(--mono); font-size:13px;">.ics</code> file that lands in Outlook, Google Calendar or Apple Calendar with rooms, speakers and times filled in. A "Download PDF" button gives them one to print for their notebook.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="value">
+    <h2>What it does for the conference</h2>
+    <ul>
+      <li><b>Real attendance forecasts.</b> Room assignments stop being a guess a week out — the counts on each session are what people actually intend to attend.</li>
+      <li><b>Full sessions self-manage.</b> Waitlists open the moment a room hits capacity; when someone drops, the next person on the list moves up automatically.</li>
+      <li><b>Presenters aren't chasing headcounts.</b> The session leader sees who's coming, in a private list, without you cutting a spreadsheet for them.</li>
+      <li><b>The right people get nudged.</b> Admins can send a follow-up only to attendees who haven't built a schedule yet — never everyone.</li>
+      <li><b>Fewer walk-ins to unbookable sessions.</b> Attendees learn a room is full at the point they'd have added it, not at the door.</li>
+      <li><b>Check-in reflects reality.</b> The badge, the print station and the analytics all read from the same list the attendee curated themselves.</li>
+    </ul>
+  </div>
+
+  <hr class="rule">
+
+  <h2>How it's kept honest</h2>
+  <p>Every seat is checked against live capacity, not a cached number, so two people can't grab the last seat at the same moment. Attendees can only see the schedule for the event they're registered for. Speakers can't be bumped from their own sessions by mistake. And a session that's been unpublished disappears from every attendee's schedule at once — no stale picks lingering behind the scenes.</p>
+
+  <div class="tech">
+    <div class="tech-head">
+      <h2>For your IT team</h2>
+      <p class="for">Technical appendix</p>
+    </div>
+    <p>The feature is a small React page (public schedule) backed by an Express + Postgres API in <code>pl-site</code>. Sign-in is a stateless HMAC-signed magic URL, not a database token — bulk invite resends never invalidate a link an attendee already clicked. Session state is a two-column junction table (<code>personal_schedules</code>) with a unique index that also serves as the seat-claim primitive.</p>
+    <ul>
+      <li>Magic-link email → HMAC-signed URL (30-day expiry, event-scoped, multi-use within window)</li>
+      <li>Capacity enforced inside a Postgres transaction; over-cap inserts convert to a <code>session_waitlist</code> row with a position</li>
+      <li>Meal-rotation pairing runs on <code>POST /sessions</code> and speaker-sync runs on <code>GET /:eventId</code></li>
+      <li>Exports: <code>.ics</code> (RFC 5545) and PDF (PDFKit), both scoped to the attendee's own picks</li>
+      <li>Admin nag emails segment by <code>invited but not built</code> — never re-mails an already-scheduled attendee</li>
+    </ul>
+    <p>Full write-up with schema, route surface, and code excerpts: <a href="https://github.com/nysais/build-my-schedule#readme">github.com/nysais/build-my-schedule</a>.</p>
+  </div>
+
+  <p class="byline">
+    <span>NYSAIS Professional Learning · <a href="https://pl.nysais.org">pl.nysais.org</a></span>
+    <span>Andrew Cooke · andrew@nysais.org</span>
+  </p>
+</div>
+</body>
+</html>
